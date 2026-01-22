@@ -8,10 +8,9 @@ import { showToast } from 'vant'
 import router from '@/router'
 
 // 创建axios实例
-// 开发环境使用代理，生产环境直接请求
-const isDev = import.meta.env.DEV
+// 统一使用相对路径，通过 Nginx 代理到后端
 const request = axios.create({
-  baseURL: isDev ? '/api' : 'http://101.42.15.26:9100',
+  baseURL: '/api',
   timeout: 10000
 })
 

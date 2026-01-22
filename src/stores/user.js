@@ -22,7 +22,13 @@ export const useUserStore = defineStore('user', {
       if (!state.permissions || !Array.isArray(state.permissions)) {
         return false
       }
-      // 检查是否有 work-log:view 权限
+
+      // 1. 检查是否有超级管理员权限（通配符）
+      if (state.permissions.includes('*:*:*')) {
+        return true
+      }
+
+      // 2. 检查是否有 work-log:view 权限
       return state.permissions.includes('work-log:view')
     },
 
