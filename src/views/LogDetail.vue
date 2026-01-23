@@ -2,7 +2,7 @@
   <div class="log-detail-page">
     <!-- 导航栏 -->
     <van-nav-bar
-      :title="readonly ? `${logStore.viewingUserName}的日志` : (logId ? '编辑日志' : '添加日志')"
+      :title="pageTitle"
       left-arrow
       @click-left="onClickLeft"
     />
@@ -77,7 +77,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { DatePicker } from 'vant'
-import { getLogDetail, addLog, updateLog, deleteLog as deleteLogApi } from '@/api'
+import { getLogDetail, addLog, updateLog, deleteLog as deleteLogApi, getMonthLogs } from '@/api'
 import { useLogStore } from '@/stores/log'
 
 const router = useRouter()
@@ -101,42 +101,101 @@ const pickerDate = ref(new Date())
 // 是否只读模式（查看他人日志时只读）
 const readonly = computed(() => !!logStore.viewingUserId)
 
+// 页面标题
+const pageTitle = computed(() => {
+  if (readonly.value) {
+    return `${logStore.viewingUserName}的日志`
+  }
+  return '编辑日志'
+})
+
 // 日期范围限制
 const minDate = ref(new Date(2020, 0, 1))
 const maxDate = ref(new Date(2030, 11, 31))
 
-onMounted(() => {
+onMounted(async () => {
   console.log('LogDetail onMounted')
   console.log('route.params:', route.params)
   console.log('route.query:', route.query)
 
-  // id 是路由参数，date 是查询参数
-  const id = route.params.id
+  // 统一使用 date 参数
   const { date } = route.query
 
-  console.log('解析的参数 - id:', id, 'date:', date)
-
-  if (id) {
-    // 编辑模式
-    console.log('编辑模式，id:', id)
-    logId.value = Number(id)
-    loadLogDetail()
-    // 编辑模式下，先设置 URL 中的 date（后端 API 的 log_date 字段可能为 null）
-    if (date) {
-      console.log('使用 URL 参数中的日期:', date)
-      setDateValue(date)
-    }
-  } else if (date) {
-    // 新增模式，使用指定日期
-    console.log('新增模式，date:', date)
+  if (date) {
+    console.log('使用指定日期:', date)
     setDateValue(date)
+    // 根据 date 查找该日期是否有日志
+    await findLogByDate(date)
   } else {
     // 默认使用今天
     const today = formatDate(new Date())
-    console.log('默认模式，使用今天:', today)
+    console.log('默认使用今天:', today)
     setDateValue(today)
+    // 查找今天的日志
+    await findLogByDate(today)
   }
 })
+
+// 根据日期查找日志
+async function findLogByDate(dateStr) {
+  console.log('开始查找日期的日志:', dateStr)
+
+  // 1. 先尝试从 logStore 的缓存中查找
+  let foundLog = findLogFromStore(dateStr)
+
+  if (foundLog && foundLog.id) {
+    console.log('从缓存中找到日志:', foundLog)
+    logId.value = foundLog.id
+    content.value = foundLog.content || ''
+    return
+  }
+
+  // 2. 如果缓存中没有，尝试加载该月份的数据
+  console.log('缓存中未找到，尝试加载月度数据')
+  try {
+    const date = new Date(dateStr)
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+
+    // 加载该月份的日志数据
+    const res = await getMonthLogs(year, month)
+    const monthLogs = res.data?.logs || {}
+
+    // 从返回的数据中查找该日期的日志
+    if (monthLogs[dateStr] && monthLogs[dateStr].id) {
+      console.log('从月度数据中找到日志:', monthLogs[dateStr])
+      const log = monthLogs[dateStr]
+      logId.value = log.id
+      content.value = log.content || ''
+    } else {
+      console.log('该日期没有日志，保持新增模式')
+    }
+  } catch (error) {
+    console.error('加载月度数据失败:', error)
+    // 即使加载失败，也保持新增模式
+  }
+}
+
+// 从 logStore 缓存中查找指定日期的日志
+function findLogFromStore(dateStr) {
+  // 从月历缓存中查找
+  if (logStore.monthLogs && logStore.monthLogs.length > 0) {
+    // monthLogs 是一个对象，key 是日期字符串
+    if (logStore.monthLogs[dateStr]) {
+      return logStore.monthLogs[dateStr]
+    }
+  }
+
+  // 从周历缓存中查找
+  if (logStore.weekLogs && logStore.weekLogs.length > 0) {
+    const log = logStore.weekLogs.find(l => l.log_date === dateStr)
+    if (log) {
+      return log
+    }
+  }
+
+  return null
+}
 
 // 设置日期值
 function setDateValue(dateStr) {
@@ -156,35 +215,6 @@ function setDateValue(dateStr) {
   displayDate.value = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdays[date.getDay()]}`
 
   console.log('设置后的 displayDate.value:', displayDate.value)
-}
-
-// 加载日志详情
-function loadLogDetail() {
-  console.log('开始加载日志详情，logId:', logId.value)
-  getLogDetail(logId.value).then(res => {
-    console.log('日志详情API返回完整对象:', res)
-    console.log('res.data:', res.data)
-    const log = res.data
-    console.log('解析的日志数据:', log)
-    console.log('log.log_date:', log.log_date)
-    console.log('log的所有字段:', JSON.stringify(log, null, 2))
-
-    // 只设置内容，不设置日期（因为 API 返回的 log_date 可能为 null）
-    // 如果 API 返回了有效的 log_date，则使用它；否则保持已有的日期
-    if (log.log_date) {
-      console.log('API 返回了有效的 log_date，使用它:', log.log_date)
-      setDateValue(log.log_date)
-    } else {
-      console.log('API 返回的 log_date 为空，保持已有日期:', logDate.value)
-    }
-
-    content.value = log.content || ''
-    console.log('设置content后的值:', content.value)
-    console.log('设置后的logDate.value:', logDate.value)
-  }).catch(err => {
-    console.error('加载日志详情失败:', err)
-    showToast('加载失败')
-  })
 }
 
 // 格式化日期

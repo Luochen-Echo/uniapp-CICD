@@ -29,7 +29,7 @@ const routes = [
     meta: { title: '日历', requiresAuth: true }
   },
   {
-    path: '/log/:id?',
+    path: '/log',
     name: 'LogDetail',
     component: () => import('@/views/LogDetail.vue'),
     meta: { title: '日志详情', requiresAuth: true }

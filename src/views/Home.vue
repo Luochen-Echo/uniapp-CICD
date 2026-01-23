@@ -8,7 +8,9 @@
       <div class="week-nav">
         <div class="nav-arrow" @click="changeWeek(-1)">◀</div>
         <div class="week-info">
-          <div class="week-range">{{ weekRangeText }}</div>
+          <div class="week-range" @click="showDatePicker = true">
+            {{ weekRangeText }}
+          </div>
           <!-- 查看他人日志提示 -->
           <div class="viewing-hint" v-if="logStore.viewingUserId">
             <span class="hint-icon">👁</span>
@@ -78,6 +80,18 @@
 
     <!-- 底部悬浮添加按钮 -->
     <div class="floating-add-btn" @click="addLog" v-if="!logStore.viewingUserId">+</div>
+
+    <!-- 日期选择弹窗 -->
+    <van-popup v-model:show="showDatePicker" position="bottom">
+      <van-date-picker
+        v-model="pickerDate"
+        title="选择日期"
+        :min-date="minDate"
+        :max-date="maxDate"
+        @confirm="onDateConfirm"
+        @cancel="showDatePicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
@@ -96,6 +110,12 @@ const userStore = useUserStore()
 // 显示的日志列表
 const displayLogs = ref([])
 const weekRangeText = ref('')
+
+// 日期选择器
+const showDatePicker = ref(false)
+const pickerDate = ref([new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()])
+const minDate = ref(new Date(2020, 0, 1))
+const maxDate = ref(new Date(2030, 11, 31))
 
 // 权限
 const canViewOthers = computed(() => userStore.canViewOthers)
@@ -252,28 +272,22 @@ function goToCalendar() {
   router.replace('/calendar')
 }
 
-// 跳转到日志详情
+// 跳转到日志详情（统一使用 date 参数）
 function goToDetail(log) {
   console.log('点击日志卡片，完整的log对象:', log)
-  console.log('log.hasLog:', log.hasLog)
-  console.log('log.id:', log.id)
-
-  if (!log.hasLog) {
-    console.log('判断为没有日志，跳转到新增页面')
-    router.push(`/log?date=${log.log_date}`)
-  } else {
-    console.log('判断为有日志，跳转到编辑页面，id:', log.id)
-    router.push(`/log/${log.id}?date=${log.log_date}`)
-  }
+  console.log('log.log_date:', log.log_date)
+  // 统一跳转到编辑页面，根据 date 自动判断是新增还是编辑
+  router.push(`/log?date=${log.log_date}`)
 }
 
-// 编辑日志
+// 编辑日志（统一使用 date 参数）
 function editLog(log) {
-  if (!log || !log.id) {
+  if (!log) {
     showToast('该日期暂无日志，请点击卡片添加')
     return
   }
-  router.push(`/log/${log.id}?date=${log.log_date}`)
+  // 统一跳转到编辑页面，根据 date 自动判断是新增还是编辑
+  router.push(`/log?date=${log.log_date}`)
 }
 
 // 删除日志
@@ -311,6 +325,23 @@ function addLog() {
 
   const today = formatDate(new Date())
   router.push(`/log?date=${today}`)
+}
+
+// 日期选择确认
+function onDateConfirm() {
+  const [year, month, day] = pickerDate.value
+  const selectedDate = new Date(year, month - 1, day)
+
+  // 计算选中日期的周一
+  const weekMonday = getWeekMonday(selectedDate)
+  const weekSunday = getWeekSunday(selectedDate)
+
+  logStore.weekStart = weekMonday
+  logStore.weekEnd = weekSunday
+  weekRangeText.value = formatWeekRange(weekMonday, weekSunday)
+
+  showDatePicker.value = false
+  loadWeekLogs()
 }
 
 // 返回我的日志
@@ -395,6 +426,12 @@ function goToUserList() {
   font-weight: 600;
   color: #1F2329;
   padding: 0 12px;
+  cursor: pointer;
+  user-select: none;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 /* 查看他人日志提示 */

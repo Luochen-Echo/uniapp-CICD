@@ -6,7 +6,7 @@
     <!-- 月份选择器 -->
     <div class="month-selector">
       <div class="nav-arrow" @click="changeMonth(-1)">◀</div>
-      <div class="month-text">
+      <div class="month-text" @click="showDatePicker = true">
         <span v-if="logStore.viewingUserId">{{ logStore.viewingUserName }}的日志</span>
         <span v-else>我的日志</span>
         （{{ currentYear }}年{{ currentMonth }}月）
@@ -59,10 +59,10 @@
     </div>
 
     <!-- 选中日期的日志预览 -->
-    <div class="log-preview" v-if="selectedDate">
+    <div class="log-preview" v-if="selectedDate" @click="goToDetail">
       <div class="preview-header">
         <span class="preview-title">{{ selectedDateText }}</span>
-        <span class="preview-action" @click="goToDetail" v-if="selectedLog">查看详情</span>
+        <span class="preview-action" v-if="selectedLog">查看详情</span>
       </div>
       <div class="preview-content" v-if="selectedLog">
         <div class="work-label">今日工作</div>
@@ -71,7 +71,7 @@
         </div>
       </div>
       <div class="empty-log" v-else>
-        <span>暂无日志，点击下方按钮添加</span>
+        <span>点击添加日志</span>
       </div>
     </div>
 
@@ -80,6 +80,18 @@
 
     <!-- 底部悬浮添加按钮 -->
     <div class="floating-add-btn" @click="addLog" v-if="!logStore.viewingUserId">+</div>
+
+    <!-- 日期选择弹窗 -->
+    <van-popup v-model:show="showDatePicker" position="bottom">
+      <van-date-picker
+        v-model="pickerDate"
+        title="选择日期"
+        :min-date="minDate"
+        :max-date="maxDate"
+        @confirm="onDateConfirm"
+        @cancel="showDatePicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
@@ -97,6 +109,12 @@ const userStore = useUserStore()
 // 当前年月
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth() + 1)
+
+// 日期选择器
+const showDatePicker = ref(false)
+const pickerDate = ref([new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()])
+const minDate = ref(new Date(2020, 0, 1))
+const maxDate = ref(new Date(2030, 11, 31))
 
 // 星期标题
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
@@ -236,8 +254,10 @@ function formatDate(date) {
   return `${year}-${month}-${day}`
 }
 
-// 选择日期
+// 选择日期（显示预览）
 function selectDate(day) {
+  if (!day.dateStr) return
+
   selectedDate.value = day.dateStr
 
   const date = new Date(day.dateStr)
@@ -245,10 +265,10 @@ function selectDate(day) {
   selectedLog.value = (day.log && day.log.id) ? day.log : null
 }
 
-// 查看详情
+// 跳转到日志详情（编辑页面）
 function goToDetail() {
-  if (selectedLog.value && selectedLog.value.id) {
-    router.push(`/log/${selectedLog.value.id}?date=${selectedDate.value}`)
+  if (selectedDate.value) {
+    router.push(`/log?date=${selectedDate.value}`)
   }
 }
 
@@ -263,6 +283,18 @@ function addLog() {
   router.push(`/log?date=${today}`)
 }
 
+// 日期选择确认
+function onDateConfirm() {
+  const [year, month, day] = pickerDate.value
+
+  // 提取选中日期的年月
+  currentYear.value = year
+  currentMonth.value = month
+
+  showDatePicker.value = false
+  loadMonthLogs()
+}
+
 // 跳转到用户列表
 function goToUserList() {
   router.push('/users')
@@ -274,6 +306,9 @@ function backToMyLogs() {
   const today = new Date()
   currentYear.value = today.getFullYear()
   currentMonth.value = today.getMonth() + 1
+  selectedDate.value = ''
+  selectedDateText.value = ''
+  selectedLog.value = null
   loadMonthLogs()
 }
 </script>
@@ -330,6 +365,12 @@ function backToMyLogs() {
   font-size: 16px;
   font-weight: 600;
   color: #1F2329;
+  cursor: pointer;
+  user-select: none;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 .nav-actions {
@@ -468,6 +509,11 @@ function backToMyLogs() {
   padding: 16px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 
 .preview-header {
@@ -488,7 +534,6 @@ function backToMyLogs() {
 .preview-action {
   font-size: 13px;
   color: #3370FF;
-  cursor: pointer;
 }
 
 .preview-content {
