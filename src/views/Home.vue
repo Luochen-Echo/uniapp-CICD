@@ -64,7 +64,7 @@
           <div class="work-section">
             <div class="work-label">今日工作</div>
             <div class="work-content" :class="{ 'work-placeholder': !log.hasLog }">
-              <span>{{ log.hasLog ? log.summary : '暂无工作内容' }}</span>
+              <span>{{ log.hasLog ? log.content : '暂无工作内容' }}</span>
             </div>
           </div>
         </div>

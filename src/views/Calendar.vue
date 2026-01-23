@@ -67,7 +67,7 @@
       <div class="preview-content" v-if="selectedLog">
         <div class="work-label">今日工作</div>
         <div class="work-content">
-          <span>{{ selectedLog.summary || '暂无内容' }}</span>
+          <span>{{ selectedLog.content || '暂无内容' }}</span>
         </div>
       </div>
       <div class="empty-log" v-else>
