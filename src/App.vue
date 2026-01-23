@@ -29,7 +29,24 @@ onMounted(async () => {
 
 <template>
   <div id="app">
-    <router-view class="page-content" :class="{ 'with-tabbar': showTabBar }" />
+    <router-view v-slot="{ Component, route }">
+      <keep-alive>
+        <component
+          :is="Component"
+          v-if="route.meta.keepAlive"
+          :key="route.fullPath"
+          class="page-content"
+          :class="{ 'with-tabbar': showTabBar }"
+        />
+      </keep-alive>
+      <component
+        :is="Component"
+        v-if="!route.meta.keepAlive"
+        :key="route.fullPath"
+        class="page-content"
+        :class="{ 'with-tabbar': showTabBar }"
+      />
+    </router-view>
     <TabBar v-if="showTabBar" />
   </div>
 </template>

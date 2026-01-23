@@ -77,7 +77,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import { DatePicker } from 'vant'
-import { getLogDetail, addLog, updateLog, deleteLog as deleteLogApi, getMonthLogs } from '@/api'
+import { getLogDetail, addLog, updateLog, deleteLog as deleteLogApi } from '@/api'
 import { useLogStore } from '@/stores/log'
 
 const router = useRouter()
@@ -139,6 +139,7 @@ onMounted(async () => {
 // 根据日期查找日志
 async function findLogByDate(dateStr) {
   console.log('开始查找日期的日志:', dateStr)
+  console.log('当前查看用户ID:', logStore.viewingUserId)
 
   // 1. 先尝试从 logStore 的缓存中查找
   let foundLog = findLogFromStore(dateStr)
@@ -157,8 +158,8 @@ async function findLogByDate(dateStr) {
     const year = date.getFullYear()
     const month = date.getMonth() + 1
 
-    // 加载该月份的日志数据
-    const res = await getMonthLogs(year, month)
+    // 使用 logStore.fetchMonthLogs 来加载数据（会自动判断是否查看他人日志）
+    const res = await logStore.fetchMonthLogs(year, month)
     const monthLogs = res.data?.logs || {}
 
     // 从返回的数据中查找该日期的日志

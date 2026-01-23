@@ -146,6 +146,7 @@ onMounted(() => {
 })
 
 onActivated(() => {
+  // 从详情页返回时，只刷新数据，保持当前选择的月份
   loadMonthLogs()
 })
 

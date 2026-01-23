@@ -22,10 +22,6 @@
           <div class="action-btn back-btn" v-if="logStore.viewingUserId" @click="backToMyLogs">
             返回我的
           </div>
-          <!-- 切换用户按钮（有权限且查看自己时显示） -->
-          <div class="action-btn switch-btn" v-if="canViewOthers && !logStore.viewingUserId" @click="goToUserList">
-            切换用户
-          </div>
           <div class="nav-arrow" @click="changeWeek(1)">▶</div>
         </div>
       </div>
@@ -127,7 +123,11 @@ onMounted(() => {
 })
 
 onActivated(() => {
-  loadWeekLogs()
+  // 从详情页返回时，只刷新数据，不重新初始化周
+  // 这样可以保持用户切换后的周位置
+  if (logStore.weekStart) {
+    loadWeekLogs()
+  }
 })
 
 // 初始化周数据

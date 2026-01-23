@@ -20,13 +20,13 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: () => import('@/views/Home.vue'),
-    meta: { title: '日志', requiresAuth: true }
+    meta: { title: '日志', requiresAuth: true, keepAlive: true }
   },
   {
     path: '/calendar',
     name: 'Calendar',
     component: () => import('@/views/Calendar.vue'),
-    meta: { title: '日历', requiresAuth: true }
+    meta: { title: '日历', requiresAuth: true, keepAlive: true }
   },
   {
     path: '/log',

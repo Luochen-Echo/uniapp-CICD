@@ -148,6 +148,9 @@ export const useLogStore = defineStore('log', {
     setViewingUser(userId, userName) {
       this.viewingUserId = userId
       this.viewingUserName = userName
+      // 清空缓存，避免数据混淆
+      this.weekLogs = []
+      this.monthLogs = []
     },
 
     /**
@@ -157,6 +160,9 @@ export const useLogStore = defineStore('log', {
       this.viewingUserId = null
       this.viewingUserName = ''
       this.weekOffset = 0
+      // 清空缓存，避免数据混淆
+      this.weekLogs = []
+      this.monthLogs = []
     },
 
     /**
