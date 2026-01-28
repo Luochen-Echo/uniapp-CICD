@@ -21,7 +21,11 @@ onMounted(async () => {
       await userStore.fetchUserInfo()
       console.log('App - 用户信息已加载')
     } catch (error) {
-      console.error('App - 加载用户信息失败:', error)
+      // token失效，清除并跳转登录页
+      console.error('App - 加载用户信息失败，token已失效:', error)
+      localStorage.removeItem('token')
+      userStore.token = ''
+      router.replace('/login')
     }
   }
 })

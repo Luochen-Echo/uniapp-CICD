@@ -1,8 +1,5 @@
 <template>
   <div class="calendar-page">
-    <!-- 导航栏占位 -->
-    <div class="navbar-placeholder"></div>
-
     <!-- 月份选择器 -->
     <div class="month-selector">
       <div class="nav-arrow" @click="changeMonth(-1)">◀</div>
@@ -319,12 +316,6 @@ function backToMyLogs() {
   min-height: 100vh;
   background: #F5F6F7;
   padding-bottom: 50px;
-}
-
-/* 导航栏占位 */
-.navbar-placeholder {
-  height: 56px;
-  background: #F5F6F7;
 }
 
 /* 月份选择器 */

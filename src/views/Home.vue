@@ -1,8 +1,5 @@
 <template>
   <div class="home-page">
-    <!-- 导航栏占位 -->
-    <div class="navbar-placeholder"></div>
-
     <!-- 周选择器 -->
     <div class="week-selector">
       <div class="week-nav">
@@ -43,10 +40,6 @@
       <div class="log-card" v-for="log in displayLogs" :key="log.log_date" v-else>
         <div class="card-header">
           <div class="card-date-box">
-            <div class="date-badge">
-              <div class="date-day">{{ log.day }}</div>
-              <div class="date-month">{{ log.weekday }}</div>
-            </div>
             <div class="date-info">
               <div class="date-text">{{ log.dateText }}</div>
             </div>
@@ -61,11 +54,8 @@
           </div>
         </div>
         <div class="card-body" @click="goToDetail(log)">
-          <div class="work-section">
-            <div class="work-label">今日工作</div>
-            <div class="work-content" :class="{ 'work-placeholder': !log.hasLog }">
-              <span>{{ log.hasLog ? log.content : '暂无工作内容' }}</span>
-            </div>
+          <div class="work-content" :class="{ 'work-placeholder': !log.hasLog }">
+            <span>{{ log.hasLog ? log.content : '暂无工作内容' }}</span>
           </div>
         </div>
       </div>
@@ -238,7 +228,7 @@ function generateWeekDays(apiLogs) {
     const dateStr = formatDate(date)
     const day = date.getDate()
     const month = date.getMonth() + 1
-    const weekday = date.getDay() - 1
+    const weekday = (date.getDay() + 6) % 7
 
     if (logMap[dateStr]) {
       weekDays.push({
@@ -246,7 +236,7 @@ function generateWeekDays(apiLogs) {
         day,
         weekday: weekdayMap[weekday],
         fullWeekday: fullWeekdayMap[weekday],
-        dateText: `${month}月${day}日`,
+        dateText: `${date.getFullYear()}年${month}月${day}日 ${weekdayMap[weekday]}`,
         hasLog: true
       })
     } else {
@@ -258,7 +248,7 @@ function generateWeekDays(apiLogs) {
         day,
         weekday: weekdayMap[weekday],
         fullWeekday: fullWeekdayMap[weekday],
-        dateText: `${month}月${day}日`,
+        dateText: `${date.getFullYear()}年${month}月${day}日 ${weekdayMap[weekday]}`,
         hasLog: false
       })
     }
@@ -364,12 +354,6 @@ function goToUserList() {
   padding-bottom: 50px;
 }
 
-/* 导航栏占位 */
-.navbar-placeholder {
-  height: 56px;
-  background: #FFFFFF;
-}
-
 /* 周选择器 */
 .week-selector {
   position: fixed;
@@ -377,7 +361,7 @@ function goToUserList() {
   left: 0;
   right: 0;
   background: #FFFFFF;
-  padding: 68px 16px 12px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -527,7 +511,7 @@ function goToUserList() {
 
 /* 内容区 */
 .content-scroll {
-  margin-top: 56px;
+  margin-top: 130px;
   padding: 0 16px 20px;
 }
 
